@@ -1,0 +1,7 @@
+name: Deploy Application via Bastion
+
+on:
+  push:
+    branches:
+      - bastion
+  
