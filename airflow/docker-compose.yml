@@ -1,0 +1,20 @@
+version: '3'
+services:
+  airflow:
+    image: apache/airflow:latest
+    container_name: airflow
+    restart: unless-stopped
+    command: standalone
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
