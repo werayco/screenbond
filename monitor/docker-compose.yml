@@ -1,0 +1,72 @@
+services:
+  cadvisor:
+      image: gcr.io/cadvisor/cadvisor:latest
+      container_name: cadvisor
+      privileged: true                         
+      ports:
+        - "8090:8080"                       
+      volumes:
+        - /:/rootfs:ro
+        - /var/run:/var/run:ro
+        - /sys:/sys:ro
+        - /var/lib/docker/:/var/lib/docker:ro
+        - /dev/disk/:/dev/disk:ro
+      devices:
+        - /dev/kmsg
+      networks:
+        - monitors
+      restart: unless-stopped
+
+  process-exporter:
+      image: ncabatoff/process-exporter:latest
+      container_name: process-exporter
+      privileged: true
+      ports:
+        - "9256:9256"
+      volumes:
+        - /proc:/host/proc:ro              
+        - ./process-exporter-config:/config:ro
+      command:
+        - "--procfs=/host/proc"
+        - "--config.path=/config/process-exporter.yml"
+      networks:
+        - monitors
+      restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    networks:
+      - monitors
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - monitors
+    restart: unless-stopped
+
+networks:
+  monitors:
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
